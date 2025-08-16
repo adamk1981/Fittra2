@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fit Tracker</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0a7cff">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <style>
+    :root { --gap: 14px; --radius: 14px; --shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: -apple-system, system-ui, Segoe UI, Roboto, Helvetica, Arial, sans-serif; background:#0b0f14; color:#e8eef7; }
+    header { position: sticky; top:0; background: linear-gradient(180deg,#0a7cff 0%, #0a5cd1 100%); padding: 18px 16px; font-weight: 700; letter-spacing: 0.3px; }
+    main { padding: var(--gap); max-width: 820px; margin: 0 auto; }
+    .card { background: #121821; border: 1px solid #1e2a3a; border-radius: var(--radius); padding: var(--gap); box-shadow: var(--shadow); margin-bottom: var(--gap); }
+    label { font-size: 12px; color: #9fb3c8; display:block; margin-bottom: 6px; }
+    input { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid #233247; background: #0e141d; color:#e8eef7; }
+    button { padding: 12px 14px; border-radius: 12px; border: 1px solid #1e2a3a; background: #0a7cff; color: white; font-weight: 700; }
+    button.ghost { background: transparent; border-color: #2a3a53; color:#cfe2ff; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: var(--gap); }
+    .muted { color: #9fb3c8; font-size: 13px; }
+    .list { display:flex; flex-direction: column; gap: 10px; margin-top:10px; }
+    .item { background:#0f151f; border:1px solid #1c283a; border-radius:12px; padding:12px; display:flex; justify-content:space-between; align-items:center; }
+    .item small { color:#9fb3c8; display:block; }
+    #exampleBox { display:none; margin-top:12px; border-radius:12px; border:1px dashed #35507a; padding:12px; background:#0f1623; }
+    #exampleBox h4 { margin:0 0 6px 0; font-size: 14px; }
+    #exampleBox p { margin:0; color:#cfe2ff; font-size: 14px; line-height:1.4; }
+    .timer-display { font-size: 42px; font-weight: 800; text-align:center; padding: 6px 0 12px; letter-spacing: 1px; }
+    .pill { display:inline-block; padding: 6px 10px; border-radius:999px; border:1px solid #2a3a53; font-size: 12px; color:#cfe2ff; }
+    .grid-3 { display:grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--gap); }
+    .phase { text-align:center; font-weight:700; }
+    progress { width:100%; height: 12px; }
+    .preset-row { display:flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+    .preset-row button { padding:8px 10px; font-size: 13px; border-radius: 999px; }
+    .small { font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header>Fit Tracker</header>
+  <main>
+    <section class="card">
+      <h2 style="margin-top:0">Quick Log</h2>
+      <div class="row">
+        <div>
+          <label>Exercise</label>
+          <input id="exName" placeholder="e.g., Dumbbell Bench Press">
+        </div>
+        <div>
+          <label>Weight (lb)</label>
+          <input id="exWeight" type="number" inputmode="decimal" placeholder="e.g., 35">
+        </div>
+      </div>
+      <div class="row" style="margin-top: var(--gap)">
+        <div>
+          <label>Sets</label>
+          <input id="exSets" type="number" inputmode="numeric" placeholder="e.g., 3">
+        </div>
+        <div>
+          <label>Reps</label>
+          <input id="exReps" type="number" inputmode="numeric" placeholder="e.g., 10">
+        </div>
+      </div>
+
+      <div id="exampleBox">
+        <h4 id="exampleTitle">How to do it</h4>
+        <p id="exampleText"></p>
+      </div>
+
+      <div style="margin-top: var(--gap); display:flex; gap:10px; flex-wrap: wrap;">
+        <button id="saveBtn">Save</button>
+        <button class="ghost" id="exportBtn">Export CSV</button>
+      </div>
+      <p class="muted" style="margin-top:10px">Tip: Type an exercise name to see a quick how-to. Data saves on your device and works offline.</p>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Today</h3>
+      <div id="todayList" class="list"></div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Rest Timer (auto-starts when you Save)</h3>
+      <div class="row">
+        <div>
+          <label>Rest (sec)</label>
+          <input id="restSeconds" type="number" inputmode="numeric" value="90">
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <div class="small muted">Auto-starts after each saved set. You can also control it below.</div>
+        </div>
+      </div>
+      <div class="timer-display" id="restDisplay">01:30</div>
+      <progress id="restProgress" max="90" value="0"></progress>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top: var(--gap)">
+        <button id="restStart">Start</button>
+        <button class="ghost" id="restPause">Pause</button>
+        <button class="ghost" id="restReset">Reset</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Timer — Stopwatch</h3>
+      <div class="timer-display" id="stopwatchDisplay">00:00.0</div>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <button id="swStart">Start</button>
+        <button class="ghost" id="swStop">Stop</button>
+        <button class="ghost" id="swReset">Reset</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h3 style="margin-top:0">Timer — Intervals (HIIT)</h3>
+      <div class="grid-3">
+        <div>
+          <label>Work (sec)</label>
+          <input id="hiitWork" type="number" inputmode="numeric" value="60">
+        </div>
+        <div>
+          <label>Rest (sec)</label>
+          <input id="hiitRest" type="number" inputmode="numeric" value="120">
+        </div>
+        <div>
+          <label>Rounds</label>
+          <input id="hiitRounds" type="number" inputmode="numeric" value="8">
+        </div>
+      </div>
+      <div class="preset-row">
+        <button class="ghost" data-preset="60,120,8">Bike 1:00/2:00 ×8</button>
+        <button class="ghost" data-preset="30,30,10">30/30 ×10</button>
+        <button class="ghost" data-preset="20,10,8">Tabata 20/10 ×8</button>
+        <button class="ghost" data-preset="180,60,6">Endurance 3:00/1:00 ×6</button>
+      </div>
+      <div style="margin-top: var(--gap); text-align:center;">
+        <span class="pill" id="hiitPhase">Ready</span>
+      </div>
+      <div class="timer-display" id="hiitDisplay">00:00</div>
+      <progress id="hiitProgress" max="1" value="0"></progress>
+      <div style="display:flex; gap:10px; justify-content:center; margin-top: var(--gap)">
+        <button id="hiitStart">Start</button>
+        <button class="ghost" id="hiitPause">Pause</button>
+        <button class="ghost" id="hiitReset">Reset</button>
+      </div>
+      <p class="muted" style="margin-top:10px">Tip: iPhone may require one tap before sounds/vibration work.</p>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
